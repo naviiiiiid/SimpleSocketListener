@@ -1,9 +1,6 @@
 package message;
 
 
-
-import javax.xml.bind.annotation.XmlAttribute;
-import javax.xml.bind.annotation.XmlRootElement;
 import java.io.OutputStream;
 import java.util.UUID;
 
@@ -11,24 +8,23 @@ import java.util.UUID;
  * Created by n-soorani on 2017/03/18.
  */
 
-@XmlRootElement
 
 public class transactionRequest {
 
     private final Object monitor;
 
-    @XmlAttribute
+    
     private final String message;
 
-    @XmlAttribute
+    
     private final String uuid;
 
-    @XmlAttribute
+    
     private final String connectionUuid;
 
     private final OutputStream os;
 
-    @XmlAttribute
+    
     private final long enqTime;
 
     public transactionRequest(){
