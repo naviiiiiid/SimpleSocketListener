@@ -1,6 +1,5 @@
 package helper;
 
-import message.handleMessage;
 import thread.transactionsThreadPool;
 import org.apache.log4j.Logger;
 
@@ -18,12 +17,15 @@ public class myQueue<T> {
     private final Object monitor = new Object();
     private final int maxSize;
 
+    private int QueueTimeout;
+
     private transactionsThreadPool transactionsThreadPoolQueue;
 
-    public myQueue(Integer maxQueueSize , transactionsThreadPool  transactionsThreadPoolQueueParam) {
+    public myQueue(Integer maxQueueSize , transactionsThreadPool  transactionsThreadPoolQueueParam , int QueueTimeout) {
         transactionQueue = new LinkedList<>();
         this.maxSize = maxQueueSize;
         this.transactionsThreadPoolQueue = transactionsThreadPoolQueueParam;
+        this.setQueueTimeout(QueueTimeout);
     }
 
     public void enQueue(T item) {
@@ -38,7 +40,7 @@ public class myQueue<T> {
     }
 
     public T deQueue() {
-        T item = null;
+        T item;
         synchronized (monitor) {
             item = transactionQueue.poll();
         }
@@ -63,5 +65,13 @@ public class myQueue<T> {
 
     public void setTransactionsThreadPoolQueue(transactionsThreadPool transactionsThreadPoolQueue) {
         this.transactionsThreadPoolQueue = transactionsThreadPoolQueue;
+    }
+
+    public int getQueueTimeout() {
+        return QueueTimeout;
+    }
+
+    public void setQueueTimeout(int queueTimeout) {
+        QueueTimeout = queueTimeout;
     }
 }

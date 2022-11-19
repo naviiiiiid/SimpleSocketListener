@@ -1,13 +1,17 @@
 package listener;
 
 import main.socketListener;
+import org.apache.log4j.Logger;
 import socketUtil.SslServer;
 import socketUtil.TcpServer;
+import wrapper.wrapperService;
 
 import java.net.ServerSocket;
 import java.net.Socket;
 
 public class Listener implements Runnable {
+
+    public static final Logger logger = Logger.getLogger(Listener.class);
 
     public Listener() {
         Thread listenerThread = new Thread(this, "Listener");
@@ -24,35 +28,35 @@ public class Listener implements Runnable {
             int port =  Integer.parseInt(socketListener.myConfig.getProperties("port"));
 
             if (sslEnable) {
-                SslServer sslServer = new SslServer(socketListener.logger);
+                SslServer sslServer = new SslServer(logger);
                 serverSocket = sslServer.run(port,
                         (Boolean.parseBoolean(socketListener.myConfig.getProperties("needClientAuth"))));
             } else {
-                TcpServer tcpServer = new TcpServer(socketListener.logger);
+                TcpServer tcpServer = new TcpServer(logger);
                 serverSocket = tcpServer.run(port);
             }
         }
         catch (Exception ex) {
-            socketListener.logger.error("Exception : => " + ex);
+            logger.error("Exception : => " + ex);
         }
 
 
         while (true) {
             if (serverSocket == null) {
-                socketListener.logger.error("serverSocket is Null!!");
+                logger.error("serverSocket is Null!!");
                 break;
             }else {
                 try {
-                    socketListener.logger.info("waiting Accept Socket Client!!! ");
+                    logger.info("waiting Accept Socket Client!!! ");
                     Socket client = serverSocket.accept();
 
-                    socketListener.logger.info("Accepted Client Ip : " + client.getRemoteSocketAddress().toString());
+                    logger.info("Accepted Client Ip : " + client.getRemoteSocketAddress().toString());
                     Integer indexFree = socketListener.freeIndexStack.pop();
                     socketListener.handleClientList.get(indexFree).threadParam = client;
                     socketListener.handleClientList.get(indexFree).getManualResetEvent().set();
 
                 } catch (Exception ex) {
-                    socketListener.logger.error(ex);
+                    logger.error(ex);
                 }
             }
         }

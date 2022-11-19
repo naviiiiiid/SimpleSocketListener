@@ -54,6 +54,8 @@
     <properties>
         <maven.compiler.source>8</maven.compiler.source>
         <maven.compiler.target>8</maven.compiler.target>
+        <version.java>1.8</version.java>
+        <jdk.version>1.8</jdk.version>
     </properties>
 
 </project>

@@ -1,4 +1,3 @@
-
 package main;
 
 import helper.myConfig;
@@ -6,6 +5,7 @@ import helper.myQueue;
 import helper.myStack;
 import listener.Listener;
 import message.handleClient;
+import message.transactionRequest;
 import org.apache.log4j.*;
 import thread.transactionThread;
 import thread.transactionsThreadPool;
@@ -21,41 +21,49 @@ public class socketListener {
     public static myStack<Integer> freeIndexStack;
     public static helper.myConfig myConfig;
     public static ArrayList<handleClient> handleClientList;
-    public static myQueue transactionQueue;
+    public static myQueue<transactionRequest> transactionQueue;
     public static thread.transactionsThreadPool transactionsThreadPool;
     public static ArrayList<transactionThread> transactionThreadArray;
 
 
     public static void main(String[] args) throws Exception {
 
-        myConfig = new myConfig("config.properties");
+        try {
 
-        String ThreadCount = myConfig.getProperties("AcceptThreadCount");
-        String ThreadTransactionCount = myConfig.getProperties("TransactionThreadCount");
-        String maxSizeQueue = myConfig.getProperties("maxSizeQueue");
-        String QueueTimeout = myConfig.getProperties("QueueTimeout");
+            myConfig = new myConfig("config.properties");
 
-        freeIndexStack = new myStack<>(logger);
-        handleClientList = new ArrayList<>();
+            String ThreadCount = myConfig.getProperties("AcceptThreadCount");
+            String ThreadTransactionCount = myConfig.getProperties("TransactionThreadCount");
+            String maxSizeQueue = myConfig.getProperties("maxSizeQueue");
+            String QueueTimeout = myConfig.getProperties("QueueTimeout");
 
-        for (int counter = 0; counter < Integer.parseInt(ThreadCount); counter++) {
-            handleClient handleClient = new handleClient(counter, null );
-            handleClientList.add(handleClient);
+            freeIndexStack = new myStack<>(logger);
+            handleClientList = new ArrayList<>();
+
+            for (int counter = 0; counter < Integer.parseInt(ThreadCount); counter++) {
+                handleClient handleClient = new handleClient(counter, null);
+                handleClientList.add(handleClient);
+            }
+
+
+            transactionThreadArray = new ArrayList<>();
+            for (int counter = 0; counter < Integer.parseInt(ThreadTransactionCount); counter++) {
+                transactionThread transactionThread = new transactionThread(counter);
+                transactionThreadArray.add(transactionThread);
+            }
+
+            transactionsThreadPool = new transactionsThreadPool(transactionThreadArray);
+            transactionsThreadPool.startThreadPool();
+
+            transactionQueue = new myQueue<>(Integer.parseInt(maxSizeQueue), transactionsThreadPool,
+                    Integer.parseInt(QueueTimeout));
+
+            new Listener();
         }
-
-
-        transactionThreadArray  =new ArrayList<>();
-        for (int counter = 0; counter < Integer.parseInt(ThreadTransactionCount); counter++) {
-            transactionThread transactionThread = new transactionThread(counter);
-            transactionThreadArray.add(transactionThread);
+        catch (Exception ex){
+            logger.error(ex.toString());
+            throw  ex;
         }
-
-        transactionsThreadPool  = new transactionsThreadPool(transactionThreadArray);
-        transactionsThreadPool.startThreadPool();
-
-        transactionQueue = new myQueue(Integer.parseInt(maxSizeQueue) , transactionsThreadPool);
-
-        new Listener();
 
     }
 }

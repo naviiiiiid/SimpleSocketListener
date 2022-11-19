@@ -17,9 +17,10 @@ public class transactionThread implements Runnable {
 
     private static final Integer  currentIndex = -1;
 
-    private Thread myThread;
-    private Integer threadIndex;
+    private final Thread myThread;
+    private final Integer threadIndex;
     private ManualResetEvent ManualResetEvent;
+
 
     public transactionThread(Integer indexParam) {
         threadIndex = indexParam;
@@ -33,40 +34,46 @@ public class transactionThread implements Runnable {
     }
 
     @Override
+    @SuppressWarnings("InfiniteLoopStatement")
     public void run() {
 
-        while (true) {
-            try {
-                getManualResetEvent().reset();
-                transactionRequest item = (transactionRequest) socketListener.transactionQueue.deQueue();
+        try {
 
-                if (item != null) {
-                    try {
+            while (true) {
+                try {
+                    getManualResetEvent().reset();
+                    transactionRequest item = socketListener.transactionQueue.deQueue();
 
-                        Integer queueTimeout = Integer.parseInt(socketListener.myConfig.getProperties("QueueTimeout"));
-                        long timeWait = System.currentTimeMillis() - item.getEnqTime();
-                        if (timeWait >= queueTimeout) {
-                            throw new Exception("Queue TimeOut!!! + Time Wait is : " + timeWait +
-                                    "|" + item.getUuid() + "|" + item.getConnectionUuid());
+                    if (item != null) {
+                        try {
+
+                            long timeWait = System.currentTimeMillis() - item.getEnqTime();
+                            if (timeWait >= socketListener.transactionQueue.getQueueTimeout()) {
+                                throw new Exception("Queue TimeOut!!! + Time Wait is : " + timeWait +
+                                        "|" + item.getUuid() + "|" + item.getConnectionUuid());
+                            }
+
+                            String responseFromClient = wrapperService.sendToService(item.getMessage());
+
+                            logger.info("response from Client => " + responseFromClient
+                                    + "|" + item.getUuid() + "|" + item.getConnectionUuid());
+                            write(responseFromClient, item);
+
+                        } catch (Exception ex) {
+                            logger.info("ex=> " + ex + "|" + item.getUuid());
                         }
-
-                        String responseFromClient = wrapperService.sendToService(item.getMessage());
-
-                        logger.info("response from Client => " + responseFromClient
-                                + "|" + item.getUuid() + "|" + item.getConnectionUuid());
-                        write(responseFromClient, item);
-
-                    } catch (Exception ex) {
-                        logger.info("ex=> " + ex + "|" + item.getUuid());
+                    } else {
+                        logger.info("Sleep Thread : " + threadIndex);
+                        getManualResetEvent().waitOne();
+                        logger.info("Wake UP  Thread : " + threadIndex);
                     }
-                } else {
-                    logger.info("Sleep Thread : " + threadIndex);
-                    getManualResetEvent().waitOne();
-                    logger.info("Wake UP  Thread : " + threadIndex);
+                } catch (Exception ex) {
+                    logger.error("Error in Thread");
                 }
-            } catch (Exception ex) {
-                logger.error("Error in Thread");
             }
+        }
+        catch (Exception ex){
+           logger.error(ex.toString());
         }
     }
 
